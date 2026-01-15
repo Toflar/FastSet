@@ -8,7 +8,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5",
-        "symfony/filesystem": "^8.0",
+        "symfony/filesystem": "^7.4 || ^8.0",
         "terminal42/contao-build-tools": "@dev"
     },
     "license": "MIT",

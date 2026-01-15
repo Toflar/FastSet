@@ -1,0 +1,35 @@
+# /.github/workflows/ci.yml
+name: CI
+
+on:
+    push: ~
+    pull_request: ~
+
+permissions: read-all
+
+jobs:
+    ci:
+        uses: 'terminal42/contao-build-tools/.github/workflows/build-tools.yml@main'
+
+    tests:
+        name: 'PHP ${{ matrix.php }}'
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ['8.3', '8.4', '8.5']
+        steps:
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Install the dependencies
+              run: composer update --no-interaction --no-suggest --prefer-stable
+
+            - name: Run the unit tests
+              run: vendor/bin/phpunit
