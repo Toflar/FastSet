@@ -50,9 +50,9 @@ FastSet uses a **sorted fingerprint array** instead of storing the original stri
 Because hash prefixes are uniformly distributed, buckets are tiny.
 Real world tests on the fixture file that contains ~140k entries in this repository (`tests/Fixtures/terms_de.txt`):
 
-- Average bucket size ≈ **2–3 entries**
-- Worst case (real data): **11 entries**
-- Worst-case comparisons: **⌈log₂(11)⌉ = 4**
+- Average bucket size `≈2–3` entries
+- Worst case (real data): `11` entries
+- Worst case comparisons: `log₂(11) = 4`
 
 Of course, the bigger your dictionary, the bigger the individual buckets.
 
@@ -106,7 +106,7 @@ You can ship these files with your application.
 ```php
 $set = new FastSet(__DIR__ . '/dict');
 
-if ($set->has('Abendessen')) {
+if ($set->has('look-me-up')) {
     // exists
 }
 ```
