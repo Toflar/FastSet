@@ -43,8 +43,7 @@ class FastSet
 
         $fingerprint = $this->getFingerPrintForEntry($entry);
 
-        // Use the first 2 bytes of the fingerprint as prefix bucket key
-        $prefixKey = (\ord($fingerprint[0]) << 8) | \ord($fingerprint[1]);
+        $prefixKey = $this->getPrefixKey($fingerprint);
 
         // Restrict search to the bucket range [startIndex, endIndex]
         $startIndex = $this->starts[$prefixKey];
@@ -116,8 +115,7 @@ class FastSet
         $hashFile = $this->openFileHandleForWriting($this->hashesPath);
 
         foreach ($fingerPrints as $fingerprint) {
-            // First two bytes of the hash interpreted as a 16-bit prefix
-            $prefixKey = (\ord($fingerprint[0]) << 8) | \ord($fingerprint[1]);
+            $prefixKey = $this->getPrefixKey($fingerprint);
             ++$prefixCounts[$prefixKey];
 
             // Each fingerprint is exactly 16 bytes
@@ -158,6 +156,14 @@ class FastSet
         $this->blob = $blob;
         $this->starts = array_values(unpack('V*', $indexBytes));
         $this->isInitialized = true;
+    }
+
+    /**
+     * Use the first 2 bytes of the fingerprint as prefix bucket key.
+     */
+    public function getPrefixKey(string $fingerprint): int
+    {
+        return (\ord($fingerprint[0]) << 8) | \ord($fingerprint[1]);
     }
 
     private function getFingerPrintForEntry(string $entry): string
