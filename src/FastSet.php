@@ -15,9 +15,23 @@ class FastSet
     private string $blob = '';
 
     /**
-     * @var array<int>
+     * Prefix → start-offset lookup table for the sorted fingerprint blob.
+     *
+     * Fingerprints (16 bytes each) are stored sorted (binary order) in `hashes.bin`.
+     * We bucket them by their first 2 bytes (a 16-bit prefix key in the range 0..65535).
+     *
+     * For each prefix key `p`, this array stores the starting index (not the byte offset)
+     * of that bucket within the sorted fingerprint list. This defines the low of our
+     * bucket. For the high, we need to take `p + 1`.
+     *
+     * This is why the table has 65537 entries: one extra "placeholder" entry at the end
+     * containing the offset after the last fingerprint, so `p + 1` is always defined.
+     *
+     * Values are indices of 16-byte fingerprints (so byte position = index * 16).
+     *
+     * @var array<int, int>
      */
-    private array $starts = [];
+    private array $prefixOffsets = [];
 
     public function __construct(private readonly string $directory)
     {
@@ -46,8 +60,8 @@ class FastSet
         $prefixKey = $this->getPrefixKey($fingerprint);
 
         // Restrict search to the bucket range [startIndex, endIndex]
-        $startIndex = $this->starts[$prefixKey];
-        $endIndex = $this->starts[$prefixKey + 1];
+        $startIndex = $this->prefixOffsets[$prefixKey];
+        $endIndex = $this->prefixOffsets[$prefixKey + 1];
 
         // Empty bucket -> definitely not present
         if ($startIndex >= $endIndex) {
@@ -154,7 +168,7 @@ class FastSet
         }
 
         $this->blob = $blob;
-        $this->starts = array_values(unpack('V*', $indexBytes));
+        $this->prefixOffsets = array_values(unpack('V*', $indexBytes));
         $this->isInitialized = true;
     }
 
