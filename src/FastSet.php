@@ -148,8 +148,14 @@ class FastSet
             return;
         }
 
-        $this->blob = (string) file_get_contents($this->hashesPath); // concatenated 16-byte fingerprints
-        $indexBytes = (string) file_get_contents($this->indexPath);
+        $blob = @file_get_contents($this->hashesPath);
+        $indexBytes = @file_get_contents($this->indexPath);
+
+        if (false === $blob || false === $indexBytes) {
+            throw new \RuntimeException('Hashes or index files do not exist.');
+        }
+
+        $this->blob = $blob;
         $this->starts = array_values(unpack('V*', $indexBytes));
         $this->isInitialized = true;
     }
