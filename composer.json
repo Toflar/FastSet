@@ -1,0 +1,36 @@
+{
+    "name": "toflar/fast-set",
+    "description": "Provides the means to create memory-efficient precompiled sets with very fast fingerprint lookups",
+    "keywords": ["dictionary", "set", "lookup", "binary", "hash", "memory", "fingerprint"],
+    "type": "library",
+    "require":  {
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.5",
+        "symfony/filesystem": "^8.0",
+        "terminal42/contao-build-tools": "@dev"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Toflar\\FastSet\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Toflar\\FastSet\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Yanick Witschi",
+            "email": "yanick.witschi@terminal42.ch"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "terminal42/contao-build-tools": true
+        }
+    }
+}
