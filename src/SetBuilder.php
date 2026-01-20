@@ -36,6 +36,8 @@ final class SetBuilder
      */
     public static function buildFromArray(array $terms, string $outputPath): void
     {
+        $terms = array_unique($terms);
+
         sort($terms, SORT_STRING);
 
         $outputHandle = self::openForWritingPossiblyGzip($outputPath);
