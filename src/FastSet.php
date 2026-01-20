@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Toflar\FastSet;
 
-class FastSet
+final class FastSet
 {
     private readonly string $hashesPath;
 
@@ -92,32 +92,18 @@ class FastSet
     }
 
     /**
-     * The source path must be a file with all entries separated by new lines.
+     * The source path must be a file built using the SetBuilder.
      */
     public function build(string $sourcePath): void
     {
-        if (!is_file($sourcePath)) {
-            throw new \InvalidArgumentException('Source file does not exist.');
-        }
-
-        $handle = fopen($sourcePath, 'r');
-        if (false === $handle) {
-            throw new \InvalidArgumentException('Source file is not readable.');
-        }
-
         $fingerPrints = [];
 
-        while (($line = fgets($handle)) !== false) {
-            $entry = trim($line);
-
-            if ('' === $entry) {
-                continue;
-            }
-
-            $fingerPrints[] = $this->getFingerPrintForEntry($entry);
-        }
-
-        fclose($handle);
+        SetBuilder::readSet(
+            $sourcePath,
+            function (string $entry) use (&$fingerPrints): void {
+                $fingerPrints[] = $this->getFingerPrintForEntry($entry);
+            },
+        );
 
         // Sort all fingerprints so we can binary-search them later
         sort($fingerPrints, SORT_STRING);

@@ -85,23 +85,56 @@ composer require toflar/fast-set
 
 ### 1. Build the set (one-time)
 
+Hashes are an excellent tool for evenly distributing entries, which is exactly what makes lookups in `FastSet` 
+extremely fast. However, hashes are not well suited for distribution:
+
+* They are often larger than the original terms (especially for short words). 
+* They are effectively random, which means gzip compression performs very poorly.
+
+Shipping prebuilt hash files would therefore often mean shipping more data than the original dictionary.
+
+The solution: The `SetBuilder`
+
+This library ships with a `SetBuilder` that is designed specifically for distribution size efficiency.
+Instead of shipping hashes, you ship a compressed dictionary that:
+
+* exploits shared prefixes between terms
+* avoids repeating identical prefixes 
+* compresses extremely well with gzip
+
+The hash-based data structures are then generated locally at build time.
+
 ```php
+$myOriginalSet = __DIR__ . '/dictionary.txt'; // one entry per line
+
+// Encode/Compress with the prefix algorithm:
+SetBuilder::buildSet($myOriginalSet, './compressed.txt');
+
+// Encode/Compress with the prefix algorithm and gzip on top (the .gz suffix determines that):
+SetBuilder::buildSet($myOriginalSet, './compressed.gz');
+
+// You then ship either "compressed.txt" or "compressed.gz" with your application. Instantiating 
+// is then done as follows:
 $set = new FastSet(__DIR__ . '/dict');
-$set->build(__DIR__ . '/dictionary.txt'); // one entry per line
+$set->build(__DIR__ . '/compressed.(txt|gz)'); // Must be a file built using the SetBuilder
 ```
 
-This creates:
+Calling `build` creates the following files on-the-fly:
 ```
 dict/
 ├── hashes.bin
 └── index.bin
 ```
 
-You can ship these files with your application.
-
+> Important:
+> Do not ship `hashes.bin` or `index.bin`.
+> Only ship the compressed dictionary created by the `SetBuilder`.
 ---
 
 ### 2. Lookup
+
+Once you have initialized/built your `FastSet` calling `build()` so that the required files have been built, you can 
+then use it as follows:
 
 ```php
 $set = new FastSet(__DIR__ . '/dict');
@@ -111,7 +144,8 @@ if ($set->has('look-me-up')) {
 }
 ```
 
-The files are loaded lazily on first lookup, but you can also call `initialize()` explicitly if you want to.
+The `hashes.bin` and `index.bin` files are loaded lazily on first lookup, but you can also call `initialize()` 
+explicitly if you want to load them into memory at a specific point in time.
 
 ---
 
