@@ -27,6 +27,15 @@ final class SetBuilder
         }
         fclose($inputHandle);
 
+        self::buildFromArray($terms, $outputPath);
+    }
+
+    /**
+     * @param array<string> $terms
+     * @param string        $outputPath If your output path ends on ".gz", the set will also get compressed on top.
+     */
+    public static function buildFromArray(array $terms, string $outputPath): void
+    {
         sort($terms, SORT_STRING);
 
         $outputHandle = self::openForWritingPossiblyGzip($outputPath);
@@ -35,7 +44,7 @@ final class SetBuilder
 
         foreach ($terms as $term) {
             $commonPrefixLength = self::commonPrefixByteLength($previousTerm, $term);
-            $suffix = substr($term, $commonPrefixLength);
+            $suffix = substr((string) $term, $commonPrefixLength);
 
             // <prefixLen>\t<suffix>\n
             fwrite($outputHandle, (string) $commonPrefixLength);

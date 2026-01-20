@@ -113,6 +113,10 @@ SetBuilder::buildSet($myOriginalSet, './compressed.txt');
 // Encode/Compress with the prefix algorithm and gzip on top (the .gz suffix determines that):
 SetBuilder::buildSet($myOriginalSet, './compressed.gz');
 
+// If your dictionary is not a line-feed separated file, but you have an array, you can also build it from an
+// array directly:
+SetBuilder::buildFromArray($myArray, './compressed.gz');
+
 // You then ship either "compressed.txt" or "compressed.gz" with your application. Instantiating 
 // is then done as follows:
 $set = new FastSet(__DIR__ . '/dict');
