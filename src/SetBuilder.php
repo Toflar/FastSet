@@ -12,7 +12,7 @@ final class SetBuilder
      */
     public static function buildSet(string $sourcePath, string $outputPath): void
     {
-        $inputHandle = fopen($sourcePath, 'r');
+        $inputHandle = @fopen($sourcePath, 'r');
         if (false === $inputHandle) {
             throw new \RuntimeException('Unable to open file: '.$sourcePath);
         }
@@ -113,7 +113,7 @@ final class SetBuilder
                 throw new \RuntimeException('Cannot open for gzip write (gzopen not available): '.$path);
             }
 
-            $handle = gzopen($path, 'wb9');
+            $handle = @gzopen($path, 'wb9');
             if (false === $handle) {
                 throw new \RuntimeException('Cannot open for gzip write: '.$path);
             }
@@ -121,7 +121,7 @@ final class SetBuilder
             return $handle;
         }
 
-        $handle = fopen($path, 'w');
+        $handle = @fopen($path, 'w');
         if (false === $handle) {
             throw new \RuntimeException('Cannot open for write: '.$path);
         }
@@ -139,7 +139,7 @@ final class SetBuilder
                 throw new \RuntimeException('Cannot open for reading gzip reading (gzopen not available): '.$path);
             }
 
-            $handle = gzopen($path, 'rb');
+            $handle = @gzopen($path, 'rb');
             if (false === $handle) {
                 throw new \RuntimeException('Cannot open for reading gzip reading: '.$path);
             }
@@ -147,7 +147,7 @@ final class SetBuilder
             return $handle;
         }
 
-        $handle = fopen($path, 'r');
+        $handle = @fopen($path, 'r');
         if (false === $handle) {
             throw new \RuntimeException('Cannot open for reading: '.$path);
         }
