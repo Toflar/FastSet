@@ -32,7 +32,7 @@ class FastSetTest extends TestCase
         $fastSet->build(__DIR__.'/Fixtures/terms_de.txt');
     }
 
-    #[TestWith(['xxh64'])]
+    #[TestWith(['xxh3'])]
     #[TestWith(['xxh128'])]
     public function testWorkingWithSetBuilderWithoutGzipCompression(string $hashAlgorithm): void
     {
@@ -48,7 +48,7 @@ class FastSetTest extends TestCase
         $this->assertFastSetContents($fastSet);
     }
 
-    #[TestWith(['xxh64'])]
+    #[TestWith(['xxh3'])]
     #[TestWith(['xxh128'])]
     public function testWorkingWithSetBuilderWithGzipCompression(string $hashAlgorithm): void
     {

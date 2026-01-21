@@ -39,14 +39,14 @@ final class FastSet
 
     public function __construct(
         private readonly string $directory,
-        private readonly string $hashAlgorithm = 'xxh64',
+        private readonly string $hashAlgorithm = 'xxh3',
     ) {
         if (!is_dir($this->directory)) {
             throw new \InvalidArgumentException('Directory does not exist.');
         }
 
-        if (!\in_array($this->hashAlgorithm, ['xxh64', 'xxh128'], true)) {
-            throw new \LogicException(\sprintf('Unsupported hash algorithm "%s". Use "xxh64" or "xxh128".', $this->hashAlgorithm));
+        if (!\in_array($this->hashAlgorithm, ['xxh3', 'xxh128'], true)) {
+            throw new \LogicException(\sprintf('Unsupported hash algorithm "%s". Use "xxh3" or "xxh128".', $this->hashAlgorithm));
         }
 
         if (!\in_array($this->hashAlgorithm, hash_algos(), true)) {

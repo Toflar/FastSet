@@ -118,9 +118,9 @@ SetBuilder::buildSet($myOriginalSet, './compressed.gz');
 // array directly:
 SetBuilder::buildFromArray($myArray, './compressed.gz');
 
-// You can use either xxh64 (default) or xxh128
+// You can use either xxh3 (default) or xxh128
 // xxh128 will have a smaller probability for false-positives but require more memory
-$hashAlgorithm = 'xxh64';
+$hashAlgorithm = 'xxh3';
 
 // You then ship either "compressed.txt" or "compressed.gz" with your application. Instantiating 
 // is then done as follows:
@@ -139,6 +139,38 @@ dict/
 > Do not ship `hashes.bin` or `index.bin`.
 > Only ship the compressed dictionary created by the `SetBuilder`.
 ---
+
+#### How to choose the right hashing algorithm
+
+This library only supports the use of xxHash. Why? Because it's [extremely fast](https://xxhash.com/).
+It does, however, not make sense to allow all versions of xxHash. Hence, only `xxh3` (64bit) and `xxh128` 
+(128bit)
+are supported. 
+
+`xxh3` will almost always be the right choice for you. That's why it's the default. But decide for yourself:
+
+Collision probability by hash size for `100_000` terms:
+
+| Hash   | Bits | Probability of ≥1 collision | Interpretation    |
+|--------| ---- | --------------------------- |-------------------|
+| xxh32  | 32   | ~0.31 (31%)                 | ❌ Unacceptable   |
+| xxh3   | 64   | ~2.7 × 10⁻¹⁰                | ~1 in 3.7 billion |
+| xxh128 | 128  | ~1.5 × 10⁻²⁹                | Effectively zero  |
+
+Collision probability by hash size for `500_000` terms:
+
+| Hash   | Bits | Probability of ≥1 collision | Interpretation           |
+|--------| ---- | --------------------------- |--------------------------|
+| xxh32  | 32   | ~1.0                        | ❌ Guaranteed collisions |
+| xxh3   | 64   | ~6.8 × 10⁻⁹                 | ~1 in 147 million        |
+| xxh128 | 128  | ~3.7 × 10⁻²⁸                | Effectively zero         |
+
+
+Which algorithm to choose depends on the risk of collisions you want to take but as long as you are < 1 million 
+terms, 64-bit is astronomically safe. Maybe this is a good rule of thumb:
+
+> Use `xxh3` by default.
+> Switch to `xxh128` if your set contains millions of terms, or you need essentially zero collision risk.
 
 ### 2. Lookup
 
