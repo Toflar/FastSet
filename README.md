@@ -35,11 +35,11 @@ Typical use cases:
 FastSet uses a **sorted fingerprint array** instead of storing the original strings.
 
 ### Build time
-1. Read a newline-separated dictionary file.
-2. Hash each entry using **`xxh128`** (16 bytes, raw).
+1. Read to original dictionary built using the `SetBuilder`
+2. Hash each entry using the configured hash
 3. Sort all fingerprints.
 4. Write two files:
-   - `hashes.bin` – concatenated 16-byte fingerprints
+   - `hashes.bin` – concatenated fingerprints (without the 2-byte prefixes for maximum compression)
    - `index.bin` – a 2-byte prefix index (65,537 offsets)
 
 ### Lookup time
@@ -48,7 +48,8 @@ FastSet uses a **sorted fingerprint array** instead of storing the original stri
 3. Binary-search **only inside that bucket**.
 
 Because hash prefixes are uniformly distributed, buckets are tiny.
-Real world tests on the fixture file that contains ~140k entries in this repository (`tests/Fixtures/terms_de.txt`):
+Real world tests on the fixture file that contains ~140k entries in this repository (`tests/Fixtures/terms_de.txt`)
+using the `xxh128` hash algorithm:
 
 - Average bucket size `≈2–3` entries
 - Worst case (real data): `11` entries
@@ -56,7 +57,7 @@ Real world tests on the fixture file that contains ~140k entries in this reposit
 
 Of course, the bigger your dictionary, the bigger the individual buckets.
 
-All comparisons are fixed-width (16 bytes), not variable-length UTF-8 strings.
+All comparisons are fixed-width, not variable-length UTF-8 strings.
 
 ---
 
@@ -117,9 +118,13 @@ SetBuilder::buildSet($myOriginalSet, './compressed.gz');
 // array directly:
 SetBuilder::buildFromArray($myArray, './compressed.gz');
 
+// You can use either xxh64 (default) or xxh128
+// xxh128 will have a smaller probability for false-positives but require more memory
+$hashAlgorithm = 'xxh64';
+
 // You then ship either "compressed.txt" or "compressed.gz" with your application. Instantiating 
 // is then done as follows:
-$set = new FastSet(__DIR__ . '/dict');
+$set = new FastSet(__DIR__ . '/dict', $hashAlgorithm);
 $set->build(__DIR__ . '/compressed.(txt|gz)'); // Must be a file built using the SetBuilder
 ```
 

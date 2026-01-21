@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Toflar\FastSet\Tests;
 
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Toflar\FastSet\FastSet;
@@ -31,7 +32,9 @@ class FastSetTest extends TestCase
         $fastSet->build(__DIR__.'/Fixtures/terms_de.txt');
     }
 
-    public function testWorkingWithSetBuilderWithoutGzipCompression(): void
+    #[TestWith(['xxh64'])]
+    #[TestWith(['xxh128'])]
+    public function testWorkingWithSetBuilderWithoutGzipCompression(string $hashAlgorithm): void
     {
         // Build a set without gzip but with our prefix algorithm
         SetBuilder::buildSet(__DIR__.'/Fixtures/terms_de.txt', $this->testDirectory.'/terms_encoded.txt');
@@ -39,13 +42,15 @@ class FastSetTest extends TestCase
         // File size of the encoded file must be definitely smaller
         $this->assertTrue(filesize($this->testDirectory.'/terms_encoded.txt') < filesize(__DIR__.'/Fixtures/terms_de.txt'));
 
-        $fastSet = new FastSet($this->testDirectory);
+        $fastSet = new FastSet($this->testDirectory, $hashAlgorithm);
         $fastSet->build($this->testDirectory.'/terms_encoded.txt');
 
         $this->assertFastSetContents($fastSet);
     }
 
-    public function testWorkingWithSetBuilderWithGzipCompression(): void
+    #[TestWith(['xxh64'])]
+    #[TestWith(['xxh128'])]
+    public function testWorkingWithSetBuilderWithGzipCompression(string $hashAlgorithm): void
     {
         // Build a set without gzip but with our prefix algorithm
         SetBuilder::buildSet(__DIR__.'/Fixtures/terms_de.txt', $this->testDirectory.'/terms_encoded.txt');
@@ -57,7 +62,7 @@ class FastSetTest extends TestCase
         // File size of the gzipped file must be even smaller
         $this->assertTrue(filesize($this->testDirectory.'/terms_gzipped.gz') < filesize($this->testDirectory.'/terms_encoded.txt'));
 
-        $fastSet = new FastSet($this->testDirectory);
+        $fastSet = new FastSet($this->testDirectory, $hashAlgorithm);
         $fastSet->build($this->testDirectory.'/terms_gzipped.gz');
 
         $this->assertFastSetContents($fastSet);

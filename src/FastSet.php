@@ -10,6 +10,10 @@ final class FastSet
 
     private readonly string $indexPath;
 
+    private readonly int $fingerprintByteLength;
+
+    private readonly int $storedTailByteLength;
+
     private bool $isInitialized = false;
 
     private string $blob = '';
@@ -33,18 +37,27 @@ final class FastSet
      */
     private array $prefixOffsets = [];
 
-    public function __construct(private readonly string $directory)
-    {
-        $this->hashesPath = $this->directory.'/hashes.bin';
-        $this->indexPath = $this->directory.'/index.bin';
-
+    public function __construct(
+        private readonly string $directory,
+        private readonly string $hashAlgorithm = 'xxh64',
+    ) {
         if (!is_dir($this->directory)) {
             throw new \InvalidArgumentException('Directory does not exist.');
         }
 
-        if (!\in_array('xxh128', hash_algos(), true)) {
-            throw new \LogicException('Requires xxh128 hash algorithm.');
+        if (!\in_array($this->hashAlgorithm, ['xxh64', 'xxh128'], true)) {
+            throw new \LogicException(\sprintf('Unsupported hash algorithm "%s". Use "xxh64" or "xxh128".', $this->hashAlgorithm));
         }
+
+        if (!\in_array($this->hashAlgorithm, hash_algos(), true)) {
+            throw new \LogicException('Desired hash algorithm is not available.');
+        }
+
+        $this->fingerprintByteLength = 'xxh128' === $this->hashAlgorithm ? 16 : 8;
+        $this->storedTailByteLength = $this->fingerprintByteLength - 2;
+
+        $this->indexPath = $this->directory.'/index_'.$this->hashAlgorithm.'.bin';
+        $this->hashesPath = $this->directory.'/hashes_'.$this->hashAlgorithm.'.bin';
     }
 
     public function has(string $entry): bool
@@ -68,15 +81,19 @@ final class FastSet
             return false;
         }
 
+        $queryFingerprintTailBytes = substr($fingerprint, 2, $this->storedTailByteLength);
+
         // Binary search within that bucket
         $low = $startIndex;
         $high = $endIndex - 1;
 
         while ($low <= $high) {
             $mid = $low + $high >> 1;
-            $midFingerprint = substr($this->blob, $mid * 16, 16);
 
-            $cmp = strcmp($midFingerprint, $fingerprint);
+            $middleTailByteOffset = $mid * $this->storedTailByteLength;
+            $middleFingerprintTailBytes = substr($this->blob, $middleTailByteOffset, $this->storedTailByteLength);
+
+            $cmp = strcmp($middleFingerprintTailBytes, $queryFingerprintTailBytes);
             if (0 === $cmp) {
                 return true;
             }
@@ -118,8 +135,9 @@ final class FastSet
             $prefixKey = $this->getPrefixKey($fingerprint);
             ++$prefixCounts[$prefixKey];
 
-            // Each fingerprint is exactly 16 bytes
-            fwrite($hashFile, $fingerprint);
+            // Skip the first 2 bytes in our hashes.bin - they are already part of the index.bin
+            // so we can save 2 bytes per fingerprint to reduce our memory footprint even more
+            fwrite($hashFile, substr($fingerprint, 2, $this->storedTailByteLength));
         }
 
         fclose($hashFile);
@@ -168,7 +186,7 @@ final class FastSet
 
     private function getFingerPrintForEntry(string $entry): string
     {
-        return hash('xxh128', $entry, true);
+        return hash($this->hashAlgorithm, $entry, true);
     }
 
     /**
