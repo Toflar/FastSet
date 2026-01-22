@@ -32,15 +32,15 @@ Typical use cases:
 
 ## Design overview
 
-FastSet uses a **sorted fingerprint array** instead of storing the original strings.
+FastSet uses a **sorted fingerprint blob** instead of storing the original strings.
 
 ### Build time
 1. Read to original dictionary built using the `SetBuilder`
 2. Hash each entry using the configured hash
 3. Sort all fingerprints.
 4. Write two files:
-   - `hashes.bin` – concatenated fingerprints (without the 2-byte prefixes for maximum compression)
-   - `index.bin` – a 2-byte prefix index (65,537 offsets)
+   - `hashes_<hash_algorithm>.bin` – concatenated fingerprints (without the 2-byte prefixes for maximum compression)
+   - `index_<hash_algorithm>.bin` – a 2-byte prefix index (65,537 offsets)
 
 ### Lookup time
 1. Hash the input string with the same algorithm.
@@ -48,11 +48,12 @@ FastSet uses a **sorted fingerprint array** instead of storing the original stri
 3. Binary-search **only inside that bucket**.
 
 Because hash prefixes are uniformly distributed, buckets are tiny.
-Real world tests on the fixture file that contains ~140k entries in this repository (`tests/Fixtures/terms_de.txt`)
-using the `xxh128` hash algorithm:
+Real world tests on the fixture file that contains `~134,000` entries in this repository (`tests/Fixtures/terms_de.txt`)
+using the `xxh3` hash algorithm:
 
-- Average bucket size `≈2–3` entries
-- Worst case (real data): `11` entries
+- Used buckets: `57,112 (≈ 87.2%)`
+- Average non-empty bucket size: `2.36` entries
+- Worst case bucket size (biggest bucket): `11` entries
 - Worst case comparisons: `log₂(11) = 4`
 
 Of course, the bigger your dictionary, the bigger the individual buckets.
@@ -131,12 +132,12 @@ $set->build(__DIR__ . '/compressed.(txt|gz)'); // Must be a file built using the
 Calling `build` creates the following files on-the-fly:
 ```
 dict/
-├── hashes.bin
-└── index.bin
+├── hashes_<hash_algorithm>.bin
+└── index_<hash_algorithm>.bin
 ```
 
 > Important:
-> Do not ship `hashes.bin` or `index.bin`.
+> Do not ship `hashes_<hash_algorithm>.bin` or `index_<hash_algorithm>.bin`.
 > Only ship the compressed dictionary created by the `SetBuilder`.
 ---
 
@@ -185,7 +186,7 @@ if ($set->has('look-me-up')) {
 }
 ```
 
-The `hashes.bin` and `index.bin` files are loaded lazily on first lookup, but you can also call `initialize()` 
+The `hashes_<hash_algorithm>.bin` and `index_<hash_algorithm>.bin` files are loaded lazily on first lookup, but you can also call `initialize()` 
 explicitly if you want to load them into memory at a specific point in time.
 
 ---
