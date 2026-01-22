@@ -16,26 +16,22 @@ final class FastSet
 
     private bool $isInitialized = false;
 
-    private string $blob = '';
+    private string $hashesBlob = '';
 
     /**
      * Prefix → start-offset lookup table for the sorted fingerprint blob.
      *
-     * Fingerprints (16 bytes each) are stored sorted (binary order) in `hashes.bin`.
+     * Fingerprints are stored sorted (binary order) in `hashes.bin`.
      * We bucket them by their first 2 bytes (a 16-bit prefix key in the range 0..65535).
      *
-     * For each prefix key `p`, this array stores the starting index (not the byte offset)
+     * For each prefix key `p`, this blob stores the starting index (not the byte offset)
      * of that bucket within the sorted fingerprint list. This defines the low of our
      * bucket. For the high, we need to take `p + 1`.
      *
      * This is why the table has 65537 entries: one extra "placeholder" entry at the end
      * containing the offset after the last fingerprint, so `p + 1` is always defined.
-     *
-     * Values are indices of 16-byte fingerprints (so byte position = index * 16).
-     *
-     * @var array<int, int>
      */
-    private array $prefixOffsets = [];
+    private string $indexBlob = '';
 
     public function __construct(
         private readonly string $directory,
@@ -73,8 +69,10 @@ final class FastSet
         $prefixKey = $this->getPrefixKey($fingerprint);
 
         // Restrict search to the bucket range [startIndex, endIndex]
-        $startIndex = $this->prefixOffsets[$prefixKey];
-        $endIndex = $this->prefixOffsets[$prefixKey + 1];
+        $byteOffset = $prefixKey * 4;
+        $values = unpack('V2', substr($this->indexBlob, $byteOffset, 8));
+        $startIndex = $values[1];
+        $endIndex = $values[2];
 
         // Empty bucket -> definitely not present
         if ($startIndex >= $endIndex) {
@@ -91,7 +89,7 @@ final class FastSet
             $mid = $low + $high >> 1;
 
             $middleTailByteOffset = $mid * $this->storedTailByteLength;
-            $middleFingerprintTailBytes = substr($this->blob, $middleTailByteOffset, $this->storedTailByteLength);
+            $middleFingerprintTailBytes = substr($this->hashesBlob, $middleTailByteOffset, $this->storedTailByteLength);
 
             $cmp = strcmp($middleFingerprintTailBytes, $queryFingerprintTailBytes);
             if (0 === $cmp) {
@@ -164,15 +162,15 @@ final class FastSet
             return;
         }
 
-        $blob = @file_get_contents($this->hashesPath);
-        $indexBytes = @file_get_contents($this->indexPath);
+        $hashesBlob = @file_get_contents($this->hashesPath);
+        $indexBlob = @file_get_contents($this->indexPath);
 
-        if (false === $blob || false === $indexBytes) {
+        if (false === $hashesBlob || false === $indexBlob) {
             throw new \RuntimeException('Hashes or index files do not exist.');
         }
 
-        $this->blob = $blob;
-        $this->prefixOffsets = array_values(unpack('V*', $indexBytes));
+        $this->hashesBlob = $hashesBlob;
+        $this->indexBlob = $indexBlob;
         $this->isInitialized = true;
     }
 
