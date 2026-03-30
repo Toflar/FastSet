@@ -6,6 +6,14 @@ namespace Toflar\FastSet;
 
 final class FastSet
 {
+    /**
+     * Very small buckets are faster to scan linearly than to binary-search.
+     *
+     * With a 16-bit prefix, a lot of datasets end up with tiny buckets most of the time,
+     * so avoiding the extra branching of binary search wins in practice.
+     */
+    private const int LINEAR_SCAN_THRESHOLD = 8;
+
     private readonly string $hashesPath;
 
     private readonly string $indexPath;
@@ -80,6 +88,19 @@ final class FastSet
         }
 
         $queryFingerprintTailBytes = substr($fingerprint, 2, $this->storedTailByteLength);
+        $bucketSize = $endIndex - $startIndex;
+
+        if ($bucketSize <= self::LINEAR_SCAN_THRESHOLD) {
+            // Avoid creating intermediate substrings for the common case where the bucket
+            // only contains a handful of entries.
+            for ($index = $startIndex; $index < $endIndex; ++$index) {
+                if (0 === substr_compare($this->hashesBlob, $queryFingerprintTailBytes, $index * $this->storedTailByteLength, $this->storedTailByteLength)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         // Binary search within that bucket
         $low = $startIndex;
