@@ -10,7 +10,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Toflar\FastSet\FastSet;
 use Toflar\FastSet\SetBuilder;
 
-class FastSetTest extends TestCase
+final class FastSetTest extends TestCase
 {
     private string $testDirectory;
 
@@ -40,7 +40,7 @@ class FastSetTest extends TestCase
         SetBuilder::buildSet(__DIR__.'/Fixtures/terms_de.txt', $this->testDirectory.'/terms_encoded.txt');
 
         // File size of the encoded file must be definitely smaller
-        $this->assertTrue(filesize($this->testDirectory.'/terms_encoded.txt') < filesize(__DIR__.'/Fixtures/terms_de.txt'));
+        $this->assertLessThan(filesize(__DIR__.'/Fixtures/terms_de.txt'), filesize($this->testDirectory.'/terms_encoded.txt'));
 
         $fastSet = new FastSet($this->testDirectory, $hashAlgorithm);
         $fastSet->build($this->testDirectory.'/terms_encoded.txt');
@@ -58,9 +58,9 @@ class FastSetTest extends TestCase
         SetBuilder::buildSet(__DIR__.'/Fixtures/terms_de.txt', $this->testDirectory.'/terms_gzipped.gz');
 
         // File size of the encoded file must be definitely smaller
-        $this->assertTrue(filesize($this->testDirectory.'/terms_encoded.txt') < filesize(__DIR__.'/Fixtures/terms_de.txt'));
+        $this->assertLessThan(filesize(__DIR__.'/Fixtures/terms_de.txt'), filesize($this->testDirectory.'/terms_encoded.txt'));
         // File size of the gzipped file must be even smaller
-        $this->assertTrue(filesize($this->testDirectory.'/terms_gzipped.gz') < filesize($this->testDirectory.'/terms_encoded.txt'));
+        $this->assertLessThan(filesize($this->testDirectory.'/terms_encoded.txt'), filesize($this->testDirectory.'/terms_gzipped.gz'));
 
         $fastSet = new FastSet($this->testDirectory, $hashAlgorithm);
         $fastSet->build($this->testDirectory.'/terms_gzipped.gz');
