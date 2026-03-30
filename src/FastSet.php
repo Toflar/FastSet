@@ -89,9 +89,7 @@ final class FastSet
             $mid = $low + $high >> 1;
 
             $middleTailByteOffset = $mid * $this->storedTailByteLength;
-            $middleFingerprintTailBytes = substr($this->hashesBlob, $middleTailByteOffset, $this->storedTailByteLength);
-
-            $cmp = strcmp($middleFingerprintTailBytes, $queryFingerprintTailBytes);
+            $cmp = substr_compare($this->hashesBlob, $queryFingerprintTailBytes, $middleTailByteOffset, $this->storedTailByteLength);
             if (0 === $cmp) {
                 return true;
             }
