@@ -12,7 +12,7 @@ final class FastSet
      * With a 16-bit prefix, a lot of datasets end up with tiny buckets most of the time,
      * so avoiding the extra branching of binary search wins in practice.
      */
-    private const int LINEAR_SCAN_THRESHOLD = 8;
+    private const LINEAR_SCAN_THRESHOLD = 8;
 
     private readonly string $hashesPath;
 
