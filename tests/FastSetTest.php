@@ -6,7 +6,6 @@ namespace Toflar\FastSet\Tests;
 
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Filesystem\Filesystem;
 use Toflar\FastSet\FastSet;
 use Toflar\FastSet\SetBuilder;
 
@@ -17,9 +16,8 @@ final class FastSetTest extends TestCase
     protected function setUp(): void
     {
         $testDir = __DIR__.'/../var';
-        $fs = new Filesystem();
-        $fs->remove($testDir);
-        $fs->mkdir($testDir);
+        $this->removeDirectory($testDir);
+        mkdir($testDir, 0777, true);
         $this->testDirectory = $testDir;
     }
 
@@ -75,5 +73,23 @@ final class FastSetTest extends TestCase
         $this->assertTrue($fastSet->has('zytozym'));
         $this->assertTrue($fastSet->has('aab'));
         $this->assertFalse($fastSet->has('foobar'));
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+
+        foreach ($iterator as $file) {
+            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+        }
+
+        rmdir($directory);
     }
 }
