@@ -8,8 +8,8 @@ on:
 permissions: read-all
 
 jobs:
-    ci:
-        uses: 'terminal42/contao-build-tools/.github/workflows/build-tools.yml@main'
+    code-quality:
+        uses: 'terminal42/code-quality-tools/.github/workflows/code-quality.yml@main'
 
     tests:
         name: 'PHP ${{ matrix.php }}'
